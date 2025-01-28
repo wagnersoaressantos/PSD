@@ -2,7 +2,7 @@ import socket
 import threading
 from datetime import datetime
 
-clientes = {} 
+clientes = {}
 grupos = {}
 mensagens_pendentes = {}
 
@@ -41,7 +41,49 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
             if not comando:
                 break
 
-            if comando.startswith("-listarusuarios"):
+            if comando.startswith("-msgt"):  # Lógica para -msgt
+                partes = comando.split(" ", 2)
+                if len(partes) < 3:
+                    cliente_socket.send("Erro: Use -msgt C/D/T MENSAGEM".encode())
+                    continue
+                _, tipo, mensagem = partes
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                mensagem_formatada = f"({nome_cliente}, TODOS, {timestamp}) {mensagem}"
+
+                if tipo == "C":  # Enviar a todos conectados
+                    for usuario in clientes.keys():
+                        enviar_mensagem(usuario, mensagem_formatada)
+
+                elif tipo == "D":  # Adicionar a mensagens pendentes
+                    for usuario in mensagens_pendentes.keys():
+                        mensagens_pendentes[usuario].append(mensagem_formatada)
+
+                elif tipo == "T":  # Enviar a todos conectados e pendentes
+                    for usuario in clientes.keys():
+                        enviar_mensagem(usuario, mensagem_formatada)
+                    for usuario in mensagens_pendentes.keys():
+                        mensagens_pendentes[usuario].append(mensagem_formatada)
+
+            elif comando.startswith("-msg"):  # Lógica para -msg
+                partes = comando.split(" ", 3)
+                if len(partes) < 4:
+                    cliente_socket.send("Erro: Use -msg U/G DESTINO MENSAGEM".encode())
+                    continue
+                _, tipo, destino, mensagem = partes
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                mensagem_formatada = f"({nome_cliente}, {destino}, {timestamp}) {mensagem}"
+
+                if tipo == "U":
+                    enviar_mensagem(destino, mensagem_formatada)
+
+                elif tipo == "G":
+                    if destino in grupos:
+                        for membro in grupos[destino]:
+                            enviar_mensagem(membro, mensagem_formatada)
+                    else:
+                        cliente_socket.send("Erro: Grupo não existe".encode())
+
+            elif comando.startswith("-listarusuarios"):
                 cliente_socket.send(f"Usuários: {', '.join(listar_usuarios())}".encode())
 
             elif comando.startswith("-criargrupo"):
@@ -98,47 +140,6 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
                 else:
                     cliente_socket.send("Erro: Você não está no grupo ou ele não existe".encode())
 
-            elif comando.startswith("-msg"):
-                partes = comando.split(" ", 3)
-                if len(partes) < 4:
-                    cliente_socket.send("Erro: Use -msg U/G DESTINO MENSAGEM".encode())
-                    continue
-                _, tipo, destino, mensagem = partes
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                mensagem_formatada = f"({nome_cliente}, {destino}, {timestamp}) {mensagem}"
-
-                if tipo == "U":
-                    enviar_mensagem(destino, mensagem_formatada)
-
-                elif tipo == "G":
-                    if destino in grupos:
-                        for membro in grupos[destino]:
-                            enviar_mensagem(membro, mensagem_formatada)
-                    else:
-                        cliente_socket.send("Erro: Grupo não existe".encode())
-
-            elif comando.startswith("-msgt"):
-                partes = comando.split(" ", 2)
-                if len(partes) < 3:
-                    cliente_socket.send("Erro: Use -msgt C/D/T MENSAGEM".encode())
-                    continue
-                _, tipo, mensagem = partes
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                mensagem_formatada = f"({nome_cliente}, TODOS, {timestamp}) {mensagem}"
-
-                if tipo == "C":
-                    for usuario in clientes.keys():
-                        enviar_mensagem(usuario, mensagem_formatada)
-
-                elif tipo == "D":
-                    for usuario in mensagens_pendentes.keys():
-                        mensagens_pendentes[usuario].append(mensagem_formatada)
-
-                elif tipo == "T":
-                    for usuario in clientes.keys():
-                        enviar_mensagem(usuario, mensagem_formatada)
-                    for usuario in mensagens_pendentes.keys():
-                        mensagens_pendentes[usuario].append(mensagem_formatada)
 
     except Exception as e:
         print(f"Erro com o cliente {endereco_cliente}: {e}")
