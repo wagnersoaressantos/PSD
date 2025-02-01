@@ -1,12 +1,13 @@
-import socket
-import threading
+import socket, threading
 from datetime import datetime
+# import threading
 
 clientes = {}
 grupos = {}
 mensagens_pendentes = {}
 
 def enviar_mensagem(destinatario, mensagem):
+    
     if destinatario in clientes:
         try:
             clientes[destinatario].send(mensagem.encode())
@@ -22,8 +23,10 @@ def listar_grupos():
     return list(grupos.keys())
 
 def lidar_com_cliente(cliente_socket, endereco_cliente):
+    
     try:
         nome_cliente = cliente_socket.recv(1024).decode()
+    
         if nome_cliente in clientes:
             cliente_socket.send("Error: Usuário já conectado".encode())
             cliente_socket.close()
@@ -38,6 +41,7 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
 
         while True:
             comando = cliente_socket.recv(1024).decode()
+    
             if not comando:
                 break
 
@@ -116,10 +120,12 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
                     cliente_socket.send("Erro: Grupo não cadastrado".encode())
 
             elif comando.startswith("-entrargrupo"):
+    
                 partes = comando.split(" ", 1)
                 if len(partes) < 2:
                     cliente_socket.send("Erro: Use -entrargrupo NOME_DO_GRUPO".encode())
                     continue
+    
                 nome_grupo = partes[1]
                 if nome_grupo in grupos:
                     if nome_cliente not in grupos[nome_grupo]:
@@ -133,6 +139,7 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
                 if len(partes) < 2:
                     cliente_socket.send("Erro: Use -sairgrupo NOME_DO_GRUPO".encode())
                     continue
+    
                 nome_grupo = partes[1]
                 if nome_grupo in grupos and nome_cliente in grupos[nome_grupo]:
                     grupos[nome_grupo].remove(nome_cliente)
@@ -144,7 +151,7 @@ def lidar_com_cliente(cliente_socket, endereco_cliente):
     except Exception as e:
         print(f"Erro com o cliente {endereco_cliente}: {e}")
     finally:
-        if nome_cliente in clientes:
+        if nome_cliente in clientes and clientes[nome_cliente]==cliente_socket:
             del clientes[nome_cliente]
         cliente_socket.close()
 

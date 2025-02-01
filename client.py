@@ -1,7 +1,7 @@
-import socket
-import threading
-
+import socket, threading
+# import threading
 def enviar_mensagem(cliente_socket):
+
     while True:
         mensagem = input()
         if mensagem:
@@ -12,7 +12,9 @@ def enviar_mensagem(cliente_socket):
                 break
 
 def receber_mensagem(cliente_socket):
+    
     while True:
+    
         try:
             mensagem = cliente_socket.recv(1024).decode()
             if not mensagem:
@@ -27,7 +29,9 @@ def receber_mensagem(cliente_socket):
             break
 
 def iniciar_cliente():
+    
     cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
     try:
         cliente_socket.connect(('127.0.0.1', 5555))
     except Exception as e:
@@ -35,6 +39,7 @@ def iniciar_cliente():
         return
 
     nome_cliente = input("Digite seu nome: ")
+  
     if not nome_cliente or not nome_cliente.isalnum():
         print("Nome de usuário inválido. Use apenas letras e números.")
         cliente_socket.close()
